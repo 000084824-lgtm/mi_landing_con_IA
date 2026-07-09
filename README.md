@@ -1,31 +1,44 @@
-Flor de Cerezo — Hero
+Flor de Cerezo — Landing + Admin
 
-Instrucciones rápidas
+Esta versión incluye:
+- Landing pública con saludo por nombre y acceso de login.
+- Login para usuarios y administradores.
+- Dashboard para administrar usuarios y ver ventas diarias.
+- Base de datos MySQL con tablas para usuarios y ventas.
 
-1) Servir localmente:
+Requisitos
+- PHP 8+
+- MySQL
+- Railway account para despliegue
+
+Instalación local
+1) Crea una base de datos MySQL llamada `landing_db`.
+2) Ejecuta el script en [database/schema.sql](database/schema.sql).
+3) Define estas variables de entorno:
+   - DB_HOST
+   - DB_PORT
+   - DB_NAME
+   - DB_USERNAME
+   - DB_PASSWORD
+4) Sirve el proyecto con PHP:
 
 ```bash
-# Desde la carpeta del proyecto
-python -m http.server 8000
-# luego abrir http://localhost:8000
+php -S 0.0.0.0:8000 -t .
 ```
 
-2) Reemplazar imágenes por locales (recomendado para producción):
-- Crea `assets/images/` y coloca las imágenes con nombres claros, por ejemplo `hero-1200x630.jpg` y `hero-800x600.webp`.
-- En `index.html` sustituye las URLs de `src` y `srcset` por rutas locales: `/assets/images/hero-800w.webp` etc.
-- Genera WebP/AVIF y conserva un fallback JPEG.
+Luego abre http://localhost:8000/index.php
 
-3) Favicons y OG images:
-- Añade un `assets/favicon.ico` y actualiza la ruta en el `<head>`.
-- Para `og:image` usa una imagen 1200x630 optimizada.
+Credenciales iniciales
+- Correo: admin@tuempresa.com
+- Contraseña: Admin123!
 
-4) Performance:
-- Habilita compresión y cache headers en tu servidor/CDN.
-- Genera tamaños y `srcset` adecuados para tu catálogo.
+Despliegue en Railway
+1) Sube este proyecto a GitHub.
+2) Crea un nuevo servicio en Railway usando el repositorio.
+3) Añade las variables de entorno de MySQL.
+4) Usa el comando de inicio recomendado por Railway o el archivo Procfile incluido.
 
-5) Accesibilidad y testing:
-- Prueba con Lighthouse y axe-core.
-- Verifica contraste de texto y comportamiento con teclado.
-
-6) Notas:
-- El proyecto actualmente usa imágenes de Picsum como ejemplo; reemplázalas por tus assets para estabilidad.
+Notas
+- El login redirige a dashboard si el usuario es admin, o a la landing si es user.
+- El dashboard permite crear y editar usuarios.
+- Las ventas diarias se consultan desde la tabla `sales`.
