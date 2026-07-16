@@ -66,6 +66,7 @@ function initializeDatabase(): void
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE role = ?');
         $stmt->execute(['admin']);
 
+        // Siempre actualizar/reinsertar el admin para asegurar hash correcto
         if ((int) $stmt->fetchColumn() === 0) {
             $pdo->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')->execute([
                 'Administrador',
@@ -73,6 +74,14 @@ function initializeDatabase(): void
                 password_hash('Admin123!', PASSWORD_DEFAULT),
                 'admin',
             ]);
+            error_log("Admin user created");
+        } else {
+            // Actualizar hash del admin por si acaso
+            $pdo->prepare('UPDATE users SET password_hash = ? WHERE email = ?')->execute([
+                password_hash('Admin123!', PASSWORD_DEFAULT),
+                'admin@tuempresa.com'
+            ]);
+            error_log("Admin user hash updated");
         }
 
         // Insertar usuario regular de prueba si no existe
@@ -86,6 +95,14 @@ function initializeDatabase(): void
                 password_hash('User123!', PASSWORD_DEFAULT),
                 'user',
             ]);
+            error_log("Regular user created");
+        } else {
+            // Actualizar hash del usuario
+            $pdo->prepare('UPDATE users SET password_hash = ? WHERE email = ?')->execute([
+                password_hash('User123!', PASSWORD_DEFAULT),
+                'juan@example.com'
+            ]);
+            error_log("Regular user hash updated");
         }
     } catch (PDOException $e) {
         error_log("Database Initialization Error: " . $e->getMessage());
