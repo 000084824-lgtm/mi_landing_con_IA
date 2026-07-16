@@ -74,6 +74,19 @@ function initializeDatabase(): void
                 'admin',
             ]);
         }
+
+        // Insertar usuario regular de prueba si no existe
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE email = ?');
+        $stmt->execute(['juan@example.com']);
+
+        if ((int) $stmt->fetchColumn() === 0) {
+            $pdo->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')->execute([
+                'Juan Pérez',
+                'juan@example.com',
+                password_hash('User123!', PASSWORD_DEFAULT),
+                'user',
+            ]);
+        }
     } catch (PDOException $e) {
         error_log("Database Initialization Error: " . $e->getMessage());
         // No lanzar excepción para permitir que la página se cargue
