@@ -34,22 +34,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_user'])) {
     $password = (string) ($_POST['password'] ?? '');
     $role = ($_POST['role'] ?? 'user') === 'admin' ? 'admin' : 'user';
 
+    error_log("User save attempt: name=$name, email=$email, has_password=" . ($password !== '' ? 'yes' : 'no') . ", role=$role, id=$id");
+
     if ($name === '' || $email === '') {
         $message = 'Completa nombre y correo.';
+        error_log("User save failed: missing name or email");
     } else {
         if ($id > 0) {
             if ($password !== '') {
+                $hash = password_hash($password, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare('UPDATE users SET name = ?, email = ?, password_hash = ?, role = ? WHERE id = ?');
-                $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $role, $id]);
+                $stmt->execute([$name, $email, $hash, $role, $id]);
+                error_log("User updated: id=$id, email=$email");
             } else {
                 $stmt = $pdo->prepare('UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?');
                 $stmt->execute([$name, $email, $role, $id]);
+                error_log("User updated (no password): id=$id, email=$email");
             }
             $message = 'Usuario actualizado correctamente.';
         } else {
-            $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
-            $stmt->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $role]);
-            $message = 'Usuario creado correctamente.';
+            if ($password === '') {
+                $message = 'La contraseña es obligatoria para nuevos usuarios.';
+                error_log("User creation failed: missing password");
+            } else {
+                $hash = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$name, $email, $hash, $role]);
+                error_log("User created: email=$email, role=$role");
+                $message = 'Usuario creado correctamente.';
+            }
         }
 
         header('Location: dashboard.php');
