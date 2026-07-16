@@ -15,6 +15,9 @@ function getPdo(): PDO
     $username = getenv('DB_USERNAME') ?: getenv('DB_USER') ?: getenv('MYSQLUSER') ?: 'root';
     $password = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: '';
 
+    // Log de variables para debugging
+    error_log("DB Connection: host=$host, port=$port, database=$database, username=$username");
+
     $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $database);
 
     try {
@@ -33,42 +36,47 @@ function getPdo(): PDO
 
 function initializeDatabase(): void
 {
-    $pdo = getPdo();
+    try {
+        $pdo = getPdo();
 
-    $pdo->exec(<<<SQL
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(120) NOT NULL,
-            email VARCHAR(180) NOT NULL UNIQUE,
-            password_hash VARCHAR(255) NOT NULL,
-            role ENUM('admin','user') NOT NULL DEFAULT 'user',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    SQL);
+        $pdo->exec(<<<SQL
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(120) NOT NULL,
+                email VARCHAR(180) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                role ENUM('admin','user') NOT NULL DEFAULT 'user',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        SQL);
 
-    $pdo->exec(<<<SQL
-        CREATE TABLE IF NOT EXISTS sales (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            sale_date DATE NOT NULL,
-            customer_name VARCHAR(120) NOT NULL,
-            total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-            description VARCHAR(255) DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            INDEX idx_sale_date (sale_date)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-    SQL);
+        $pdo->exec(<<<SQL
+            CREATE TABLE IF NOT EXISTS sales (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sale_date DATE NOT NULL,
+                customer_name VARCHAR(120) NOT NULL,
+                total_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                description VARCHAR(255) DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_sale_date (sale_date)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        SQL);
 
-    $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE role = ?');
-    $stmt->execute(['admin']);
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM users WHERE role = ?');
+        $stmt->execute(['admin']);
 
-    if ((int) $stmt->fetchColumn() === 0) {
-        $pdo->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')->execute([
-            'Administrador',
-            'admin@tuempresa.com',
-            password_hash('Admin123!', PASSWORD_DEFAULT),
-            'admin',
-        ]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            $pdo->prepare('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)')->execute([
+                'Administrador',
+                'admin@tuempresa.com',
+                password_hash('Admin123!', PASSWORD_DEFAULT),
+                'admin',
+            ]);
+        }
+    } catch (PDOException $e) {
+        error_log("Database Initialization Error: " . $e->getMessage());
+        // No lanzar excepción para permitir que la página se cargue
     }
 }
 
