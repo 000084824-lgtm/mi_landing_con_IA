@@ -8,10 +8,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['login'])) {
     $email = trim($_POST['email'] ?? '');
     $password = (string) ($_POST['password'] ?? '');
 
+    error_log("Login attempt with email: $email");
+
     $pdo = getPdo();
     $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ?');
     $stmt->execute([$email]);
     $foundUser = $stmt->fetch();
+
+    if ($foundUser) {
+        error_log("User found: " . $foundUser['email']);
+        error_log("Password verify result: " . ($password_verify = password_verify($password, $foundUser['password_hash']) ? 'true' : 'false'));
+    } else {
+        error_log("User not found with email: $email");
+    }
 
     if ($foundUser && password_verify($password, $foundUser['password_hash'])) {
         $_SESSION['user'] = [
